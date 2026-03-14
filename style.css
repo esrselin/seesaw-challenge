@@ -59,17 +59,32 @@ body {
 
 .object {
   position: absolute;
+  bottom: 10px;
+  border-radius: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   color: white;
   font-weight: bold;
-  bottom: 10px;
-  border-radius: 50%;
-  transform: translateX(-50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
+.object.is-new {
+  animation: drop-in 0.45s ease-out;
+}
+
+@keyframes drop-in {
+  from {
+    transform: translateX(-50%) translateY(-80px);
+    opacity: 0.2;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
 .pivot {
   position: absolute;
   left: 50%;

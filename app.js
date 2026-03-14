@@ -31,10 +31,18 @@ function calculateAngle(leftTorque, rightTorque) {
 
 function renderObjects() {
   objectsLayer.innerHTML = "";
-  objects.forEach((object) => {
+
+  const plankWidth = plank.clientWidth;
+  const plankCenter = plankWidth / 2;
+
+  objects.forEach((object, index) => {
     const el = document.createElement("div");
     el.classList.add("object");
-    const x = 200 + object.position;
+
+    if (index === objects.length - 1)
+      el.classList.add("is-new");
+
+    const x = plankCenter + object.position;
     el.style.left = `${x}px`;
     const size = 15 + object.weight * 3;
     el.style.width = `${size}px`;
@@ -56,7 +64,6 @@ function getColor(weight) {
   return "#ff5250";
 }
 
-
 plank.addEventListener("click", (event) => {
   const plankRect = plank.getBoundingClientRect();
   const clickX = event.clientX - plankRect.left;
@@ -76,7 +83,10 @@ plank.addEventListener("click", (event) => {
   const { leftTorque, rightTorque } = calculateTorques(objects);
   const angle = calculateAngle(leftTorque, rightTorque);
 
+  setTimeout(() => {
   plank.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+  }, 315);
+
 
   console.log("Left torque:", leftTorque);
   console.log("Right torque:", rightTorque);
