@@ -65,9 +65,15 @@ function updateInfoPanel(leftWeight, rightWeight, angle) {
 }
 
 function getLocalDistanceFromCenter(event) {
-  const rect = plank.getBoundingClientRect();
-  const dx = event.clientX - (rect.left + rect.width / 2);
-  const dy = event.clientY - (rect.top + rect.height / 2);
+  const wrapper = document.querySelector(".seesaw-wrapper");
+  const wrapperRect = wrapper.getBoundingClientRect();
+
+  const centerX = wrapperRect.left + wrapperRect.width / 2;
+  const plankCenterY = wrapperRect.top + 80 + 11 / 2; 
+
+  const dx = event.clientX - centerX;
+  const dy = event.clientY - plankCenterY;
+
   const angle = (-currentAngle * Math.PI) / 180;
 
   return Math.round(dx * Math.cos(angle) - dy * Math.sin(angle));
@@ -77,8 +83,8 @@ function clampPosition(position, weight) {
   const half = plank.clientWidth / 2;
   const radius = getObjectSize(weight) / 2;
 
-  const min = -half - 13 + radius;
-  const max = half + 13 - radius;
+  const min = -half - 25 + radius;
+  const max = half + 25 - radius;
 
   return Math.round(Math.min(Math.max(position, min), max));
 }
