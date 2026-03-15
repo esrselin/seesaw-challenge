@@ -196,14 +196,6 @@ plank.addEventListener("click", (event) => {
     currentAngle = angle;
     plank.style.transform = `translateX(-50%) rotate(${angle}deg)`;
   }, 350);
-
-  console.log("Raw distance:", rawDistanceFromCenter);
-  console.log("Clamped distance:", distanceFromCenter);
-  console.log("Left torque:", leftTorque);
-  console.log("Right torque:", rightTorque);
-  console.log("Angle:", angle);
-  console.log("New object:", newObject);
-  console.log("All objects:", objects);
 });
 
 resetButton.addEventListener("click", resetSeesaw);
