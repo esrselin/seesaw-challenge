@@ -17,15 +17,9 @@ function getRandomWeight() {
 }
 
 function getColor(weight) {
-  if (weight <= 3)
-    return "#4CAF50";
-
-  if (weight <= 6)
-    return "#FF69B4";
-
-  if (weight <= 9)
-    return "#2196F3";
-
+  if (weight <= 3) return "#4CAF50";
+  if (weight <= 6) return "#FF69B4";
+  if (weight <= 9) return "#2196F3";
   return "#E53935";
 }
 
@@ -95,10 +89,8 @@ function clampPosition(position, weight) {
   const min = -halfPlank + objectRadius;
   const max = halfPlank - objectRadius;
 
-  if (position < min)
-    return Math.round(min);
-  if (position > max)
-    return Math.round(max);
+  if (position < min) return Math.round(min);
+  if (position > max) return Math.round(max);
 
   return position;
 }
@@ -131,6 +123,46 @@ function renderObjects() {
   });
 }
 
+function saveState() {
+  const state = {
+    objects: objects,
+    nextWeight: nextWeight
+  };
+
+  localStorage.setItem("seesawState", JSON.stringify(state));
+}
+
+function loadState() {
+  const savedState = localStorage.getItem("seesawState");
+
+  if (!savedState) {
+    return;
+  }
+
+  const parsedState = JSON.parse(savedState);
+
+  if (parsedState.objects && Array.isArray(parsedState.objects)) {
+    objects.push(...parsedState.objects);
+  }
+
+  if (typeof parsedState.nextWeight === "number") {
+    nextWeight = parsedState.nextWeight;
+  }
+}
+
+function syncUI() {
+  renderObjects();
+
+  const { leftTorque, rightTorque } = calculateTorques(objects);
+  const angle = calculateAngle(leftTorque, rightTorque);
+  const { leftWeight, rightWeight } = calculateWeightTotals(objects);
+
+  currentAngle = angle;
+  plank.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+
+  updateInfoPanel(leftWeight, rightWeight, angle);
+}
+
 plank.addEventListener("click", (event) => {
   const weight = nextWeight;
 
@@ -151,6 +183,7 @@ plank.addEventListener("click", (event) => {
 
   nextWeight = getRandomWeight();
   updateInfoPanel(leftWeight, rightWeight, angle);
+  saveState();
 
   clearTimeout(tiltTimeout);
   tiltTimeout = setTimeout(() => {
@@ -167,4 +200,5 @@ plank.addEventListener("click", (event) => {
   console.log("All objects:", objects);
 });
 
-updateInfoPanel(0, 0, 0);
+loadState();
+syncUI();
