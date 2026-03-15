@@ -25,9 +25,12 @@ function getObjectSize(weight) {
 }
 
 function getColor(weight) {
-  if (weight <= 3) return "#4CAF50";
-  if (weight <= 6) return "#FF69B4";
-  if (weight <= 9) return "#2196F3";
+  if (weight <= 3)
+    return "#4CAF50";
+  if (weight <= 6)
+    return "#FF69B4";
+  if (weight <= 9)
+    return "#2196F3";
   return "#E53935";
 }
 
@@ -41,7 +44,8 @@ function calculateStats(objects) {
     if (object.position < 0) {
       leftTorque += object.weight * Math.abs(object.position);
       leftWeight += object.weight;
-    } else if (object.position > 0) {
+    } 
+    else if (object.position > 0) {
       rightTorque += object.weight * object.position;
       rightWeight += object.weight;
     }
@@ -112,13 +116,12 @@ function renderObjects() {
 function addLog(weight, position) {
   let side;
 
-  if (position < 0) {
+  if (position < 0) 
     side = "left";
-  } else if (position > 0) {
+  else if (position > 0)
     side = "right";
-  } else {
+  else
     side = "center";
-  }
 
   const distance = Math.abs(position);
 
@@ -138,13 +141,13 @@ function showPauseMessage() {
     pauseMessage.textContent = "Game Paused";
     document.querySelector(".scene").appendChild(pauseMessage);
   }
-
   pauseMessage.style.display = "flex";
 }
 
 function hidePauseMessage() {
   const pauseMessage = document.getElementById("pause-message");
-  if (pauseMessage) pauseMessage.style.display = "none";
+  if (pauseMessage) 
+    pauseMessage.style.display = "none";
 }
 
 function togglePause() {
@@ -171,18 +174,22 @@ function saveState() {
 
 function loadState() {
   const savedState = localStorage.getItem("seesawState");
-  if (!savedState) return;
+  if (!savedState)
+    return;
 
   const parsedState = JSON.parse(savedState);
 
-  if (Array.isArray(parsedState.objects)) objects.push(...parsedState.objects);
-  if (parsedState.nextWeight) nextWeight = parsedState.nextWeight;
+  if (Array.isArray(parsedState.objects)) 
+    objects.push(...parsedState.objects);
+  if (parsedState.nextWeight)
+    nextWeight = parsedState.nextWeight;
 }
 
 function syncUI() {
   renderObjects();
 
-  const { leftTorque, rightTorque, leftWeight, rightWeight } = calculateStats(objects);
+  const { leftTorque, rightTorque, leftWeight, rightWeight } =
+    calculateStats(objects);
   const angle = calculateAngle(leftTorque, rightTorque);
 
   currentAngle = angle;
@@ -192,7 +199,8 @@ function syncUI() {
 }
 
 plank.addEventListener("click", (event) => {
-  if (isPaused) return;
+  if (isPaused) 
+    return;
 
   const weight = nextWeight;
   const position = clampPosition(getLocalDistanceFromCenter(event), weight);
@@ -201,7 +209,8 @@ plank.addEventListener("click", (event) => {
   renderObjects();
   addLog(weight, position);
 
-  const { leftTorque, rightTorque, leftWeight, rightWeight } = calculateStats(objects);
+  const { leftTorque, rightTorque, leftWeight, rightWeight } =
+    calculateStats(objects);
   const angle = calculateAngle(leftTorque, rightTorque);
 
   nextWeight = getRandomWeight();
