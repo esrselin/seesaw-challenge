@@ -1,6 +1,7 @@
 const plank = document.getElementById("plank");
 const objectsLayer = document.getElementById("objects-layer");
 const resetButton = document.getElementById("reset-button");
+const pauseButton = document.getElementById("pause-button");
 
 const leftWeightElement = document.getElementById("left-weight");
 const rightWeightElement = document.getElementById("right-weight");
@@ -12,46 +13,43 @@ const objects = [];
 let nextWeight = getRandomWeight();
 let tiltTimeout;
 let currentAngle = 0;
+let isPaused = false;
 
 function getRandomWeight() {
   return Math.floor(Math.random() * 10) + 1;
 }
 
+function getObjectSize(weight) {
+  return 22 + weight * 3;
+}
+
 function getColor(weight) {
-  if (weight <= 3) return "#4CAF50";
-  if (weight <= 6) return "#FF69B4";
-  if (weight <= 9) return "#2196F3";
+  if (weight <= 3) 
+    return "#4CAF50";
+  if (weight <= 6) 
+    return "#FF69B4";
+  if (weight <= 9) 
+    return "#2196F3";
   return "#E53935";
 }
 
-function calculateTorques(objects) {
+function calculateStats(objects) {
   let leftTorque = 0;
   let rightTorque = 0;
-
-  objects.forEach((object) => {
-    if (object.position < 0) {
-      leftTorque += object.weight * Math.abs(object.position);
-    } else if (object.position > 0) {
-      rightTorque += object.weight * object.position;
-    }
-  });
-
-  return { leftTorque, rightTorque };
-}
-
-function calculateWeightTotals(objects) {
   let leftWeight = 0;
   let rightWeight = 0;
 
   objects.forEach((object) => {
     if (object.position < 0) {
+      leftTorque += object.weight * Math.abs(object.position);
       leftWeight += object.weight;
     } else if (object.position > 0) {
+      rightTorque += object.weight * object.position;
       rightWeight += object.weight;
     }
   });
 
-  return { leftWeight, rightWeight };
+  return { leftTorque, rightTorque, leftWeight, rightWeight };
 }
 
 function calculateAngle(leftTorque, rightTorque) {
@@ -68,55 +66,38 @@ function updateInfoPanel(leftWeight, rightWeight, angle) {
 
 function getLocalDistanceFromCenter(event) {
   const rect = plank.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
+  const dx = event.clientX - (rect.left + rect.width / 2);
+  const dy = event.clientY - (rect.top + rect.height / 2);
+  const angle = (-currentAngle * Math.PI) / 180;
 
-  const dx = event.clientX - centerX;
-  const dy = event.clientY - centerY;
-
-  const angleInRadians = (-currentAngle * Math.PI) / 180;
-
-  const localX =
-    dx * Math.cos(angleInRadians) - dy * Math.sin(angleInRadians);
-
-  return Math.round(localX);
+  return Math.round(dx * Math.cos(angle) - dy * Math.sin(angle));
 }
 
 function clampPosition(position, weight) {
-  const halfPlank = plank.clientWidth / 2;
-  const objectSize = 22 + weight * 3;
-  const objectRadius = objectSize / 2;
+  const half = plank.clientWidth / 2;
+  const radius = getObjectSize(weight) / 2;
 
-  const min = -halfPlank + objectRadius;
-  const max = halfPlank - objectRadius;
+  const min = -half - 13 + radius;
+  const max = half + 13 - radius;
 
-  if (position < min) return Math.round(min);
-  if (position > max) return Math.round(max);
-
-  return position;
+  return Math.round(Math.min(Math.max(position, min), max));
 }
 
 function renderObjects() {
   objectsLayer.innerHTML = "";
 
-  const plankWidth = plank.clientWidth;
-  const plankCenter = plankWidth / 2;
+  const plankCenter = plank.clientWidth / 2;
 
   objects.forEach((object, index) => {
     const el = document.createElement("div");
+    const size = getObjectSize(object.weight);
+
     el.classList.add("object");
+    if (index === objects.length - 1) el.classList.add("is-new");
 
-    if (index === objects.length - 1) {
-      el.classList.add("is-new");
-    }
-
-    const x = plankCenter + object.position;
-    el.style.left = `${x}px`;
-
-    const size = 22 + object.weight * 3;
+    el.style.left = `${plankCenter + object.position}px`;
     el.style.width = `${size}px`;
     el.style.height = `${size}px`;
-
     el.style.backgroundColor = getColor(object.weight);
     el.textContent = `${object.weight}kg`;
 
@@ -124,44 +105,64 @@ function renderObjects() {
   });
 }
 
+function showPauseMessage() {
+  let pauseMessage = document.getElementById("pause-message");
+
+  if (!pauseMessage) {
+    pauseMessage = document.createElement("div");
+    pauseMessage.id = "pause-message";
+    pauseMessage.textContent = "Game Paused";
+    document.querySelector(".scene").appendChild(pauseMessage);
+  }
+
+  pauseMessage.style.display = "flex";
+}
+
+function hidePauseMessage() {
+  const pauseMessage = document.getElementById("pause-message");
+  if (pauseMessage) pauseMessage.style.display = "none";
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+
+  if (isPaused)
+  {
+    pauseButton.textContent = "Resume";
+    showPauseMessage();
+    return;
+  }
+
+  pauseButton.textContent = "Pause";
+  hidePauseMessage();
+}
+
 function resetSeesaw() {
-  localStorage.removeItem("seesawState")
-  location.reload()
+  localStorage.removeItem("seesawState");
+  location.reload();
 }
 
 function saveState() {
-  const state = {
-    objects: objects,
-    nextWeight: nextWeight
-  };
-
-  localStorage.setItem("seesawState", JSON.stringify(state));
+  localStorage.setItem("seesawState", JSON.stringify({ objects, nextWeight }));
 }
 
 function loadState() {
   const savedState = localStorage.getItem("seesawState");
-
-  if (!savedState) {
-    return;
-  }
+  if (!savedState) return;
 
   const parsedState = JSON.parse(savedState);
 
-  if (parsedState.objects && Array.isArray(parsedState.objects)) {
+  if (Array.isArray(parsedState.objects)) 
     objects.push(...parsedState.objects);
-  }
-
-  if (typeof parsedState.nextWeight === "number") {
+  if (parsedState.nextWeight) 
     nextWeight = parsedState.nextWeight;
-  }
 }
 
 function syncUI() {
   renderObjects();
 
-  const { leftTorque, rightTorque } = calculateTorques(objects);
+  const { leftTorque, rightTorque, leftWeight, rightWeight } = calculateStats(objects);
   const angle = calculateAngle(leftTorque, rightTorque);
-  const { leftWeight, rightWeight } = calculateWeightTotals(objects);
 
   currentAngle = angle;
   plank.style.transform = `translateX(-50%) rotate(${angle}deg)`;
@@ -170,28 +171,21 @@ function syncUI() {
 }
 
 plank.addEventListener("click", (event) => {
+  if (isPaused) return;
+
   const weight = nextWeight;
+  const position = clampPosition(getLocalDistanceFromCenter(event), weight);
 
-  const rawDistanceFromCenter = getLocalDistanceFromCenter(event);
-  const distanceFromCenter = clampPosition(rawDistanceFromCenter, weight);
-
-  const newObject = {
-    weight: weight,
-    position: distanceFromCenter
-  };
-
-  objects.push(newObject);
+  objects.push({ weight, position });
   renderObjects();
 
-  const { leftTorque, rightTorque } = calculateTorques(objects);
+  const { leftTorque, rightTorque, leftWeight, rightWeight } = calculateStats(objects);
   const angle = calculateAngle(leftTorque, rightTorque);
-  const { leftWeight, rightWeight } = calculateWeightTotals(objects);
 
   nextWeight = getRandomWeight();
   updateInfoPanel(leftWeight, rightWeight, angle);
   saveState();
 
-  clearTimeout(tiltTimeout);
   tiltTimeout = setTimeout(() => {
     currentAngle = angle;
     plank.style.transform = `translateX(-50%) rotate(${angle}deg)`;
@@ -199,6 +193,7 @@ plank.addEventListener("click", (event) => {
 });
 
 resetButton.addEventListener("click", resetSeesaw);
+pauseButton.addEventListener("click", togglePause);
 
 loadState();
 syncUI();
